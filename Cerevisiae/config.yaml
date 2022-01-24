@@ -1,0 +1,4 @@
+nreads: 1
+kmersize: 11
+threshold: 0.8
+datasets: S288C#chrI,S288C#chrII,S288C#chrIII,S288C#chrIV,S288C#chrV,S288C#chrVI,S288C#chrVII

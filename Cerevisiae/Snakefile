@@ -1,0 +1,205 @@
+configfile: "config.yaml"
+
+datasets = config["datasets"].split(",")
+kmersize = config["kmersize"]
+threshold = config["threshold"]
+
+rule all:
+	input:
+		expand("comp_graphaligner_{path}.txt", path=datasets),
+		expand("comp_vgaligner_{path}.txt", path=datasets),
+		expand("comp_vgmap_{path}.txt", path=datasets),
+		expand("comp_giraffe_{path}.txt", path=datasets)
+
+##### Sort the graph #####
+rule odgi_sort:
+	input:
+		"graph.gfa"
+	output:
+		"sorted_graph.gfa"
+	threads: 8
+	shell:
+		"odgi sort -i {input} -o - -p Ygs -P -t {threads} | odgi view -i - -g -t {threads} > {output}"
+
+##### Create a fasta file with all the paths #####
+rule get_paths:
+	input:
+		"sorted_graph.gfa"
+	output:
+		"paths.fasta"
+	shell:
+		"odgi paths -i {input} -f > {output}"
+
+##### Split fasta into separate files #####
+rule split_paths:
+	input:
+		"paths.fasta"
+	output:
+		expand("{path}.fa", path=datasets)
+	shell:
+		"awk -f split.awk {input}"
+
+##### Read generation with pbsim #####
+rule pbsim_generate:
+	input:
+		"{path}.fa"
+	output:
+		"{path}_0001.fastq"
+	shell:
+		"pbsim '{input}' --model_qc ../models/model_qc_clr --prefix '{wildcards.path}'"
+
+##### Run vgaligner #####
+rule vgaligner_index:
+	input:
+		"sorted_graph.gfa"
+	output:
+		index = "sorted_graph.idx",
+		mappings = "mappings.json"
+	threads: 8
+	log:
+		log = "vgaligner_index.log",
+		time = "vgaligner_index.time"
+	shell:
+		"/usr/bin/time -v -o '{log.time}' vgaligner index -i {input} -k {kmersize} -t {threads} -o {output.index} --generate-mappings > {log.log}"
+
+rule vgaligner_map:
+	input:
+		index = "sorted_graph.idx",
+		reads = "{path}_0001.fastq"
+	output:
+		"result_vgaligner_{path}.gaf"
+	threads: 8
+	log:
+		log = "vgaligner_map_{path}.log",
+		time="vgaligner_map_{path}.time"
+	shell:
+		"/usr/bin/time -v -o '{log.time}' vgaligner map -i {input.index} -f '{input.reads}' --also-align -t {threads} -o '{output}' > '{log.log}'"
+
+##### Run VG #####
+rule vg_view_gfa_to_vg:
+	input:
+		"sorted_graph.gfa"
+	output:
+		"sorted_graph_temp.vg"
+	shell:
+		"vg view -F {input} -v > {output}"
+
+rule vg_mod:
+	input:
+		"sorted_graph_temp.vg"
+	output:
+		"sorted_graph.vg"
+	shell:
+		"vg mod -X 256 {input} > {output}"
+
+rule vg_index:
+	input: 
+		"sorted_graph.vg"
+	output:
+		xg="sorted_graph.xg",
+		gcsa="sorted_graph.gcsa"
+	threads: 8
+	log:
+		time="vgindex.time"
+	shell:
+		"/usr/bin/time -v -o {log.time} vg index {input} -x {output.xg} -g {output.gcsa} -k {kmersize} -t {threads}"
+
+rule vg_map:
+	input:
+		"sorted_graph.xg",
+		"sorted_graph.gcsa",
+		reads="{path}_0001.fastq"
+	output:
+		"result_vg_{path}.gam"
+	threads: 8
+	log:
+		time="vgmap_{path}.time"
+	shell:
+		"/usr/bin/time -v -o '{log.time}' vg map -d sorted_graph -f '{input.reads}' -t {threads} > '{output}'"
+
+rule vg_map_convert:
+	input: 
+		gam="result_vg_{path}.gam",
+		graph="sorted_graph.vg"
+	output:
+		"result_vg_{path}.gaf"
+	shell:
+		"vg convert --gam-to-gaf '{input.gam}' {input.graph} >'{output}'"
+
+##### Run graphaligner #####
+rule graphaligner:
+	input:
+		graph="sorted_graph.gfa",
+		reads="{path}_0001.fastq"
+	output:
+		"result_graphaligner_{path}.gaf"
+	threads: 8
+	log:
+		log="graphaligner_{path}.log",
+		time="graphaligner_{path}.time"
+	shell:
+		"touch '{output}' && /usr/bin/time -v -o '{log.time}' GraphAligner -g {input.graph} -f '{input.reads}' -a '{output}' -x vg -t {threads} > '{log.log}'"
+
+##### Run giraffe #####
+# https://github.com/vgteam/vg/wiki/Mapping-short-reads-with-Giraffe
+
+rule vg_autoindex:
+	input:
+		"sorted_graph.gfa"
+	output:
+		"index.dist",
+		"index.gg",
+		"index.giraffe.gbwt",
+		"index.min"
+	shell:
+		"vg autoindex --workflow giraffe -g {input}"
+
+rule vg_giraffe:
+	input:
+		gbwt_index="index.giraffe.gbwt",
+		gbwt_graph="index.gg",
+		minimizer_index="index.min",
+		dist_index="index.dist",
+		reads="{path}_0001.fastq"
+	output:
+		"result_giraffe_{path}.gaf"
+	threads: 8
+	shell:
+		"vg giraffe -H {input.gbwt_index} -g {input.gbwt_graph} -m {input.minimizer_index} -d {input.dist_index} -f '{input.reads}' -t {threads} -o gaf > '{output}'"
+
+##### Run comparison scripts #####
+rule gamcompare_graphaligner:
+	input:
+		gaf="result_graphaligner_{path}.gaf",
+		mappings="mappings.json"
+	output:
+		"comp_graphaligner_{path}.txt"
+	shell:
+		"python3 ../GAFMAFcomparison2.py '{input.gaf}' {input.mappings} '{wildcards.path}' {threshold} graphaligner > '{output}'"
+
+rule gamcompare_vgaligner:
+	input:
+		gaf="result_vgaligner_{path}.gaf",
+		mappings="mappings.json"
+	output:
+		"comp_vgaligner_{path}.txt"
+	shell:
+		"python3 ../GAFMAFcomparison2.py '{input.gaf}' {input.mappings} '{wildcards.path}' {threshold} vgaligner > '{output}'"
+
+rule gamcompare_vgmap:
+	input:
+		gaf="result_vg_{path}.gaf",
+		mappings="mappings.json"
+	output:
+		"comp_vgmap_{path}.txt"
+	shell:
+		"python3 ../GAFMAFcomparison2.py '{input.gaf}' {input.mappings} '{wildcards.path}' {threshold} vgmap > '{output}'"
+
+rule gamcompare_giraffe:
+	input:
+		gaf="result_giraffe_{path}.gaf",
+		mappings="mappings.json"
+	output:
+		"comp_giraffe_{path}.txt"
+	shell:
+		"python3 ../GAFMAFcomparison2.py '{input.gaf}' {input.mappings} '{wildcards.path}' {threshold} graphaligner > '{output}'"

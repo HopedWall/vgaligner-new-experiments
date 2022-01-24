@@ -1,5 +1,5 @@
 # vgaligner-new-experiments
-New experiments for rs-vgaligner](https://github.com/HopedWall/rs-vgaligner). 
+New experiments for [rs-vgaligner](https://github.com/HopedWall/rs-vgaligner). 
 
 The main purpose of this repo is to compare the following aligners:
 - rs-vgaligner
@@ -24,7 +24,9 @@ In order to execute the pipeline for a specific graph, move into the folder for 
 
 `snakemake --keep-going --cores 8`
 
-`--keep-going` is required because vgaligner can crash on larger graphs... yet another TODO
+`--keep-going` is required because vgaligner can crash on larger graphs... yet another TODO. 
+
+This generates various subfolders, including `results` (contains the output alignments), `comparisons` (contains the comparisons between truth and alignment), `logs` (contains memory occupation and time for each aligner).
 
 ## How validation works
 For each graph, do the following:
@@ -40,4 +42,12 @@ For each path in the graph, we know the nodes it is comprised of. Since we gener
 The alignments are also returned as paths on the graph. Then we compute the following "overlap": nodes_in_truth_length / total_alignment_length. We consider a read to be correctly mapped if the "overlap" is over a certain threshold (i.e. 0.8).
 
 ## Datasets
-TODO
+
+| Graph       | Notes		                                                                     |
+| ----------- | -----------                                                                      |
+| LRC         | some of the most diverse variation regions in the human genome (Graphchainer)    |
+| MCH1        | some of the most diverse variation regions in the human genome (Graphchainer)    |
+| Cerevisiae  | Yeast (suggested by Erik)                                                        |
+| E3133       | From [HLA-Zoo](https://github.com/ekg/HLA-zoo)                                   |
+
+More should be added (TODO).
