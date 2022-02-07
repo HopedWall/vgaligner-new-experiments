@@ -41,6 +41,8 @@ For each path in the graph, we know the nodes it is comprised of. Since we gener
 
 The alignments are also returned as paths on the graph. Then we compute the following "overlap": nodes_in_truth_length / total_alignment_length. We consider a read to be correctly mapped if the "overlap" is over a certain threshold (i.e. 0.8).
 
+For additional details on validation, [click here](https://drive.google.com/file/d/1pP-Cc2beAnXL5dkWGFSwP8ZBJiipMFqY/view?usp=sharing).
+
 ## Datasets
 
 | Graph       | Notes		                                                                     |
