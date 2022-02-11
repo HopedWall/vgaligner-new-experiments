@@ -48,6 +48,15 @@ rule odgi_sort:
 	shell:
 		"odgi sort -i {input} -o - -p Ygs -P -t {threads} | odgi view -i - -g -t {threads} > {output}"
 
+#### Graph stats ####
+rule graph_stats:
+    input:
+        "{dataset}/sorted_graph_{graph}.gfa"
+    output:
+        "{dataset}/stats/stats_{graph}.txt"
+    shell:
+        "vg stats -zAL {input} > {output}"
+
 ##### Split into connected components #####
 rule odgi_explode:
 	input:
@@ -103,8 +112,8 @@ rule vgaligner_index:
 		mappings = "{dataset}/mappings.json"
 	threads: 8
 	log:
-		log = "{dataset}/logs/vgaligner_index.log",
-		time = "{dataset}/logs/vgaligner_index.time"
+		log = "{dataset}/logs/vgaligner-index.log",
+		time = "{dataset}/logs/vgaligner-index.time"
 	shell:
 		'''
 		/usr/bin/time -v -o '{log.time}' vgaligner index -i {input} -k {kmersize} -t {threads} -o {output.index} --generate-mappings > {log.log}
@@ -119,8 +128,8 @@ rule vgaligner_map:
 		"{dataset}/results/{path}_vgaligner.gaf"
 	threads: 8
 	log:
-		log = "{dataset}/logs/{path}_vgaligner_map.log",
-		time = "{dataset}/logs/{path}_vgaligner_map.time"
+		log = "{dataset}/logs/{path}_vgaligner-map.log",
+		time = "{dataset}/logs/{path}_vgaligner-map.time"
 	shell:
 		"/usr/bin/time -v -o '{log.time}' vgaligner map -i {input.index} -f '{input.reads}' --also-align -t {threads} -o '{output}' > '{log.log}'"
 
@@ -159,7 +168,7 @@ rule vg_map:
 		"{dataset}/sorted_graph.gcsa",
 		reads="{dataset}/reads/{path}_0001.fastq"
 	output:
-		"{dataset}/results/{path}_vgmap.gam"
+		temporary("{dataset}/results/{path}_vgmap.gam")
 	params:
 		prefix="{dataset}/sorted_graph"
 	threads: 8
