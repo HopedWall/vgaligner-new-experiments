@@ -1,0 +1,3 @@
+AttributeError in line 25 of /home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile:
+'dict' object has no attribute 'append'
+  File "/home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile", line 25, in <module>

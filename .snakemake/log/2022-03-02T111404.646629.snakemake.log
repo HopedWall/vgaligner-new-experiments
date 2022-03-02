@@ -1,0 +1,4 @@
+Building DAG of jobs...
+MissingInputException in line 102 of /home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile:
+Missing input files for rule pbsim_generate:
+datasets/LRC/paths/19.fa

@@ -1,0 +1,3 @@
+NameError in line 97 of /home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile:
+name 'PATHS_FOR_DATASET' is not defined
+  File "/home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile", line 97, in <module>

@@ -1,0 +1,5 @@
+ValueError in line 89 of /home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile:
+unexpected '{' in field name
+  File "/home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile", line 89, in <module>
+  File "/usr/lib/python3.8/string.py", line 167, in vformat
+  File "/usr/lib/python3.8/string.py", line 176, in _vformat

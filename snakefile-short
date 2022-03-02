@@ -2,7 +2,7 @@ import os
 
 # First, find all of the provided datasets
 # NOTE: under datasets there should be 1 folder for each graph. Each folder should ONLY contain a file named "graph.gfa" 
-DATASETS = [name for name in os.listdir("./datasets") if os.path.isdir(name) and not name.startswith(".")]
+DATASETS = [name for name in os.listdir("./datasets")]
 
 # For each dataset, we find all of its path with odgi paths (this is necessary because snakemake should know all of the
 # paths in advance). We then create two lists FINAL_DATASETS and PATHS, s.t. we have pairs (graph_i, path_j_of_graph_i):
@@ -16,6 +16,14 @@ for dataset in DATASETS:
 	FINAL_DATASETS.extend([dataset]*len(paths))
 	PATHS.extend(paths)
 assert(len(FINAL_DATASETS) == len(PATHS))
+
+# Obtain a dict with key dataset_name and as values its paths
+PATHS_PER_DATASET = dict()
+for pos,dataset in enumerate(FINAL_DATASETS):
+	curr_path = PATHS[pos]
+	if dataset not in PATHS_PER_DATASET.keys():
+		PATHS_PER_DATASET[dataset] = []
+	PATHS_PER_DATASET[dataset].append(curr_path)
 
 # Parameters for the analysis
 kmersize = 11	# VG can't build GCSA2 index with kmer size > 16 (i.e. can't use 21 for comparisons)
@@ -86,7 +94,8 @@ rule split_paths:
 	input:
 		"datasets/{dataset}/paths.fasta"
 	output:
-		expand("datasets/{{dataset}}/paths/{path}.fa", path=PATHS)
+		#expand("datasets/{{dataset}}/paths/{path}.fa", path=PATHS)
+		"datasets/{dataset}/paths/{path}.fa"
 	shell:
 		"awk -v prefix='datasets/{dataset}/paths/' -f scripts/split.awk {input}"
 
@@ -172,7 +181,7 @@ rule vg_map:
 		"datasets/{dataset}/sorted_graph.gcsa",
 		reads="datasets/{dataset}/reads/{path}_0001.fastq"
 	output:
-		temporary("datasets/{dataset}/results/{path}_vgmap.gam")
+		"datasets/{dataset}/results/{path}_vgmap.gam"
 	params:
 		prefix="datasets/{dataset}/sorted_graph"
 	threads: 8
