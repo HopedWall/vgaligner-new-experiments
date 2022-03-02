@@ -178,11 +178,11 @@ if path in mappings.keys():
                         print("Correct alignment length: {}\n".format(correct_alignment_length))
 
         # Compute final stats
-        correct_reads_ratio = reads_mapped_correctly / n_reads
+        correct_reads_ratio = reads_mapped_correctly / n_reads if n_reads != 0 else 0
         print("\nReads mapped correctly: {}/{} ({:.2f})".format(reads_mapped_correctly, n_reads, correct_reads_ratio))
 
         reads_not_mapped_correctly = n_reads-reads_mapped_correctly
-        wrong_reads_ratio = reads_not_mapped_correctly / n_reads
+        wrong_reads_ratio = reads_not_mapped_correctly / n_reads if n_reads != 0 else 0
         print("Reads NOT mapped correctly: {}/{} ({:.2f})".format(reads_not_mapped_correctly, n_reads, wrong_reads_ratio))
 else:
        print("Path not found!") 

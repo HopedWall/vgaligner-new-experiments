@@ -94,8 +94,8 @@ rule split_paths:
 	input:
 		"datasets/{dataset}/paths.fasta"
 	output:
-		#expand("datasets/{{dataset}}/paths/{path}.fa", path=PATHS_PER_DATASET[dataset])
-		"datasets/{dataset}/paths/{path}.fa"
+		expand("datasets/{{dataset}}/paths/{path}.fa", path=PATHS_PER_DATASET[dataset])
+		#"datasets/{dataset}/paths/{path}.fa"
 	shell:
 		"awk -v prefix='datasets/{dataset}/paths/' -f scripts/split.awk {input}"
 
