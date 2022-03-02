@@ -1,11 +1,10 @@
 import os
-DATASETS = [name for name in os.listdir(".") if os.path.isdir(name) and not name.startswith(".")]
-DATASETS.remove("scripts")
+DATASETS = [name for name in os.listdir("./datasets")]
 
 FINAL_DATASETS = []
 PATHS = []
 for dataset in DATASETS:
-	graph_filename = os.path.join(".", dataset, "graph.gfa")
+	graph_filename = os.path.join("./datasets", dataset, "graph.gfa")
 	paths = os.popen("odgi paths -i {} -L".format(graph_filename)).read().split("\n")[:-1]
 	FINAL_DATASETS.extend([dataset]*len(paths))
 	PATHS.extend(paths)
@@ -17,6 +16,7 @@ threshold = 0.8
 
 rule all:
 	input:
+		# Comparisons
 		expand("datasets/{dataset}/comparisons/{path}_graphaligner.txt",zip,dataset=FINAL_DATASETS,path=PATHS),
 		expand("datasets/{dataset}/comparisons/{path}_vgalignermap.txt",zip,dataset=FINAL_DATASETS, path=PATHS),
 		expand("datasets/{dataset}/comparisons/{path}_vgmap.txt",zip,dataset=FINAL_DATASETS, path=PATHS),
@@ -77,18 +77,26 @@ rule split_paths:
 	input:
 		"datasets/{dataset}/paths.fasta"
 	output:
-		expand("{datasets/{dataset}}/paths/{path}.fa", path=PATHS)
+		expand("datasets/{{dataset}}/paths/{path}.fa", path=PATHS)
 	shell:
 		"awk -v prefix='datasets/{dataset}/paths/' -f scripts/split.awk {input}"
 
 ##### Read generation with pbsim #####
-rule pbsim_generate:
+rule art_illumina_generate:
 	input:
 		"datasets/{dataset}/paths/{path}.fa"
 	output:
 		"datasets/{dataset}/reads/{path}_0001.fastq"
+	params:
+		length=150,
+		coverage=10,
+		prefix="datasets/{dataset}/reads/{path}_0001",
+		fq="datasets/{dataset}/reads/{path}_0001.fq"
 	shell:
-		"pbsim '{input}' --model_qc scripts/pbsim-models/model_qc_clr --prefix 'datasets/{dataset}/reads/{wildcards.path}'"
+		'''
+		art_illumina -ss HS25 -sam -i '{input}' -l {params.length} -f {params.coverage} -o '{params.prefix}'
+		mv '{params.fq}' '{output}'
+		'''
 
 ##### Run vgaligner #####
 rule vgaligner_index:
@@ -99,8 +107,8 @@ rule vgaligner_index:
 		mappings = "datasets/{dataset}/mappings.json"
 	threads: 8
 	log:
-		log = "datasets/{dataset}/logs/vgaligner-index.log",
-		time = "datasets/{dataset}/logs/vgaligner-index.time"
+		log = "datasets/{dataset}/logs/vgalignerindex.log",
+		time = "datasets/{dataset}/logs/vgalignerindex.time"
 	shell:
 		'''
 		/usr/bin/time -v -o '{log.time}' vgaligner index -i {input} -k {kmersize} -t {threads} -o {output.index} --generate-mappings 2> {log.log}
