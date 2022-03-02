@@ -1,6 +1,13 @@
 import os
-DATASETS = [name for name in os.listdir("./datasets")]
 
+# First, find all of the provided datasets
+# NOTE: under datasets there should be 1 folder for each graph. Each folder should ONLY contain a file named "graph.gfa" 
+DATASETS = [name for name in os.listdir("./datasets") if os.path.isdir(name) and not name.startswith(".")]
+
+# For each dataset, we find all of its path with odgi paths (this is necessary because snakemake should know all of the
+# paths in advance). We then create two lists FINAL_DATASETS and PATHS, s.t. we have pairs (graph_i, path_j_of_graph_i):
+# FINAL_PATHS =    ["graph1",       "graph1",       "graph1",          "graph2",         "graph2",       ...]
+# FINAL_DATASETS = ["graph1-path1", "graph1-path2", "graph1-path3",    "graph2-path1",   "graph2-path2", ...]
 FINAL_DATASETS = []
 PATHS = []
 for dataset in DATASETS:
@@ -8,9 +15,9 @@ for dataset in DATASETS:
 	paths = os.popen("odgi paths -i {} -L".format(graph_filename)).read().split("\n")[:-1]
 	FINAL_DATASETS.extend([dataset]*len(paths))
 	PATHS.extend(paths)
-
 assert(len(FINAL_DATASETS) == len(PATHS))
 
+# Parameters for the analysis
 kmersize = 11	# VG can't build GCSA2 index with kmer size > 16 (i.e. can't use 21 for comparisons)
 threshold = 0.8
 
@@ -21,7 +28,9 @@ rule all:
 		expand("datasets/{dataset}/comparisons/{path}_vgalignermap.txt",zip,dataset=FINAL_DATASETS, path=PATHS),
 		expand("datasets/{dataset}/comparisons/{path}_vgmap.txt",zip,dataset=FINAL_DATASETS, path=PATHS),
 		expand("datasets/{dataset}/comparisons/{path}_giraffe.txt",zip,dataset=FINAL_DATASETS,path=PATHS),
-		expand("datasets/{dataset}/comparisons/{path}_graphchainer.txt",zip,dataset=FINAL_DATASETS, path=PATHS)
+		expand("datasets/{dataset}/comparisons/{path}_graphchainer.txt",zip,dataset=FINAL_DATASETS, path=PATHS),
+		# Graph stats
+		expand("datasets/{dataset}/stats/graph_stats.txt", dataset=DATASETS)
 
 ##### Sort the graph #####
 rule odgi_sort:
