@@ -28,6 +28,7 @@ for pos,dataset in enumerate(FINAL_DATASETS):
 # Parameters for the analysis
 kmersize = 11	# VG can't build GCSA2 index with kmer size > 16 (i.e. can't use 21 for comparisons)
 threshold = 0.8
+nthreads = 8
 
 rule all:
 	input:
@@ -46,7 +47,7 @@ rule odgi_sort:
 		"datasets/{dataset}/graph.gfa"
 	output:
 		"datasets/{dataset}/sorted_graph.gfa"
-	threads: 8
+	threads: nthreads
 	shell:
 		"odgi sort -i {input} -o - -p Ygs -P -t {threads} | odgi view -i - -g -t {threads} > {output}"
 
@@ -89,6 +90,7 @@ rule get_paths:
 	shell:
 		"odgi paths -i {input} -f > {output}"
 
+'''
 ##### Split fasta into separate files #####
 rule split_paths:
 	input:
@@ -98,6 +100,19 @@ rule split_paths:
 		#"datasets/{dataset}/paths/{path}.fa"
 	shell:
 		"awk -v prefix='datasets/{dataset}/paths/' -f scripts/split.awk {input}"
+'''
+
+rule get_path:
+    input:
+        "datasets/{dataset}/paths.fasta"
+    output:
+        "datasets/{dataset}/paths/{path}.fa"
+    params:
+        name = "{path}"
+    shell:
+        """
+        samtools faidx {input} '{params.name}' > '{output}'
+        """
 
 ##### Read generation with pbsim #####
 rule pbsim_generate:
@@ -115,15 +130,12 @@ rule vgaligner_index:
 	output:
 		index = "datasets/{dataset}/sorted_graph.idx",
 		mappings = "datasets/{dataset}/mappings.json"
-	threads: 8
+	threads: nthreads
 	log:
 		log = "datasets/{dataset}/logs/vgaligner-index.log",
 		time = "datasets/{dataset}/logs/vgaligner-index.time"
 	shell:
-		'''
-		/usr/bin/time -v -o '{log.time}' vgaligner index -i {input} -k {kmersize} -t {threads} -o {output.index} --generate-mappings 2> {log.log}
-		mv mappings.json datasets/{dataset}/mappings.json
-		'''
+		"/usr/bin/time -v -o '{log.time}' vgaligner index -i {input} -k {kmersize} -t {threads} -o {output.index} --generate-mappings -p datasets/{dataset}/mappings.json 2> {log.log}"
 
 rule vgaligner_map:
 	input:
@@ -161,7 +173,7 @@ rule vg_index:
 	output:
 		xg="datasets/{dataset}/sorted_graph.xg",
 		gcsa="datasets/{dataset}/sorted_graph.gcsa"
-	threads: 8
+	threads: nthreads
 	log:
 		time="datasets/{dataset}/logs/vgindex.time"
 	shell:
@@ -176,7 +188,7 @@ rule vg_map:
 		"datasets/{dataset}/results/{path}_vgmap.gam"
 	params:
 		prefix="datasets/{dataset}/sorted_graph"
-	threads: 8
+	threads: nthreads
 	log:
 		time="datasets/{dataset}/logs/{path}_vgmap.time"
 	shell:
@@ -198,7 +210,7 @@ rule graphaligner:
 		reads="datasets/{dataset}/reads/{path}_0001.fastq"
 	output:
 		"datasets/{dataset}/results/{path}_graphaligner.gaf"
-	threads: 8
+	threads: nthreads
 	log:
 		log="datasets/{dataset}/logs/{path}_graphaligner.log",
 		time="datasets/{dataset}/logs/{path}_graphaligner.time"
@@ -230,7 +242,7 @@ rule vg_giraffe:
 		reads="datasets/{dataset}/reads/{path}_0001.fastq"
 	output:
 		"datasets/{dataset}/results/{path}_giraffe.gaf"
-	threads: 8
+	threads: nthreads
 	log:
 		log="datasets/{dataset}/logs/{path}_giraffe.log",
 		time="datasets/{dataset}/logs/{path}_giraffe.time"
@@ -244,7 +256,7 @@ rule graphchainer:
 		reads="datasets/{dataset}/reads/{path}_0001.fastq"
 	output:
 		"datasets/{dataset}/results/{path}_graphchainer.gaf"
-	threads: 8
+	threads: nthreads
 	log:
 		log="datasets/{dataset}/logs/{path}_graphchainer.log",
 		time="datasets/{dataset}/logs/{path}_graphchainer.time"
