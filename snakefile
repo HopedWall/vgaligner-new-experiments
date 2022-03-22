@@ -185,15 +185,16 @@ rule vg_map:
 		"datasets/{dataset}/sorted_graph.gcsa",
 		reads="datasets/{dataset}/reads/{path}_0001.fastq"
 	output:
-		"datasets/{dataset}/results/{path}_vgmap.gam"
+		"datasets/{dataset}/results/{path}_vgmap.gaf"
 	params:
 		prefix="datasets/{dataset}/sorted_graph"
 	threads: nthreads
 	log:
 		time="datasets/{dataset}/logs/{path}_vgmap.time"
 	shell:
-		"/usr/bin/time -v -o '{log.time}' vg map -d {params.prefix} -f '{input.reads}' -t {threads} > '{output}'"
+		"/usr/bin/time -v -o '{log.time}' vg map -d {params.prefix} -f '{input.reads}' -t {threads} --gaf > '{output}'"
 
+'''
 rule vg_map_convert:
 	input: 
 		gam="datasets/{dataset}/results/{path}_vgmap.gam",
@@ -202,6 +203,7 @@ rule vg_map_convert:
 		"datasets/{dataset}/results/{path}_vgmap.gaf"
 	shell:
 		"vg convert --gam-to-gaf '{input.gam}' {input.graph} >'{output}'"
+'''
 
 ##### Run graphaligner #####
 rule graphaligner:

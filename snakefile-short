@@ -88,7 +88,7 @@ rule get_paths:
 		"datasets/{dataset}/paths.fasta"
 	shell:
 		"odgi paths -i {input} -f > {output}"
-
+'''
 ##### Split fasta into separate files #####
 rule split_paths:
 	input:
@@ -98,6 +98,19 @@ rule split_paths:
 		"datasets/{dataset}/paths/{path}.fa"
 	shell:
 		"awk -v prefix='datasets/{dataset}/paths/' -f scripts/split.awk {input}"
+'''
+
+rule get_path:
+    input:
+        "datasets/{dataset}/paths.fasta"
+    output:
+        "datasets/{dataset}/paths/{path}.fa"
+    params:
+        name = "{path}"
+    shell:
+        """
+        samtools faidx {input} '{params.name}' > '{output}'
+        """
 
 ##### Read generation with pbsim #####
 rule art_illumina_generate:
@@ -181,15 +194,16 @@ rule vg_map:
 		"datasets/{dataset}/sorted_graph.gcsa",
 		reads="datasets/{dataset}/reads/{path}_0001.fastq"
 	output:
-		"datasets/{dataset}/results/{path}_vgmap.gam"
+		"datasets/{dataset}/results/{path}_vgmap.gaf"
 	params:
 		prefix="datasets/{dataset}/sorted_graph"
 	threads: 8
 	log:
 		time="datasets/{dataset}/logs/{path}_vgmap.time"
 	shell:
-		"/usr/bin/time -v -o '{log.time}' vg map -d {params.prefix} -f '{input.reads}' -t {threads} > '{output}'"
+		"/usr/bin/time -v -o '{log.time}' vg map -d {params.prefix} -f '{input.reads}' -t {threads} --gaf > '{output}'"
 
+'''
 rule vg_map_convert:
 	input: 
 		gam="datasets/{dataset}/results/{path}_vgmap.gam",
@@ -198,6 +212,7 @@ rule vg_map_convert:
 		"datasets/{dataset}/results/{path}_vgmap.gaf"
 	shell:
 		"vg convert --gam-to-gaf '{input.gam}' {input.graph} >'{output}'"
+'''
 
 ##### Run graphaligner #####
 rule graphaligner:
