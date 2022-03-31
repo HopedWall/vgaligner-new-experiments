@@ -100,7 +100,7 @@ rule split_paths:
 		"awk -v prefix='datasets/{dataset}/paths/' -f scripts/split.awk {input}"
 '''
 
-rule get_path:
+rule split_paths:
     input:
         "datasets/{dataset}/paths.fasta"
     output:
@@ -273,15 +273,6 @@ rule graphchainer:
 		time="datasets/{dataset}/logs/{path}_graphchainer.time"
 	shell:
 		"touch '{output}' && /usr/bin/time -v -o '{log.time}' GraphChainer -g {input.graph} -f '{input.reads}' -a '{output}' -t {threads} > '{log.log}'"
-
-rule vg_map_convert_graphchainer:
-	input: 
-		gam="datasets/{dataset}/results/{path}_graphchainer.gam",
-		graph="datasets/{dataset}/sorted_graph.gfa"
-	output:
-		"datasets/{dataset}/results/{path}_graphchainer.gaf"
-	shell:
-		"vg convert --gam-to-gaf '{input.gam}' {input.graph} >'{output}'"
 
 ##### Run comparison scripts #####
 rule gamcompare_graphaligner:
