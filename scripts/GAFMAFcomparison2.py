@@ -168,10 +168,14 @@ if path in mappings.keys():
                 overlap_ratio = correct_alignment_length / my_gaf_path_len
                 threshold = float(args["Threshold"])
                 if overlap_ratio > threshold:
-                        #print("Read correctly mapped")
+                        print("Type: Correct")
+                        print("Incorrect alignment nodes: {}".format(my_gaf_int))
+                        print("Read is: {}".format(my_gaf_name))
+                        print("GAF alignment length: {}".format(my_gaf_path_len))
+                        print("Correct alignment length: {}\n".format(correct_alignment_length))
                         reads_mapped_correctly += 1
                 else:
-                        #print("Read not mapped correctly")
+                        print("Type: Incorrect")
                         print("Incorrect alignment nodes: {}".format(my_gaf_int))
                         print("Read is: {}".format(my_gaf_name))
                         print("GAF alignment length: {}".format(my_gaf_path_len))
