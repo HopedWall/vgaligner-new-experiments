@@ -120,8 +120,17 @@ rule pbsim_generate:
 		"datasets/{dataset}/paths/{path}.fa"
 	output:
 		"datasets/{dataset}/reads/{path}_0001.fastq"
+	params:
+		length = 100,
+		accuracy = 1,
+		depth = 1.0
 	shell:
-		"pbsim '{input}' --model_qc scripts/pbsim-models/model_qc_clr --prefix 'datasets/{dataset}/reads/{wildcards.path}'"
+		"( " +
+		"pbsim '{input}' --model_qc scripts/pbsim-models/model_qc_clr --prefix 'datasets/{dataset}/reads/{wildcards.path}' " +
+		"--length-min {params.length} --length-max {params.length} --length-mean {params.length} " +
+		"--accuracy-min {params.accuracy} --accuracy-max {params.accuracy} --accuracy-mean {params.accuracy} " +
+		"--depth {params.depth} "
+		")"
 
 ##### Run vgaligner #####
 rule vgaligner_index:
