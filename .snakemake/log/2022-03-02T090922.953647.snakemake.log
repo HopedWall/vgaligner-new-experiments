@@ -1,4 +1,0 @@
-Building DAG of jobs...
-MissingInputException in line 30 of /home/hopedwall/Desktop/new_abpoa_test/vgaligner-new-experiments/snakefile:
-Missing input files for rule odgi_sort:
-datasets/datasets/graph.gfa
